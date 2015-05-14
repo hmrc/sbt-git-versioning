@@ -1,12 +1,11 @@
-# sbt-bintray-publish
+# sbt-git-versioning
 
-Contains SBT settings to publish an HMRC project's artefact to [Bintray](https://bintray.com/).
+Contains SBT settings in an auto-plugin to version an HMRC SBT project.
 
 ## Usage
 
-addSbtPlugin("uk.gov.hmrc" % "sbt-bintray-publish" % "0.2.0")
+addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "0.2.0")
 
 ## License ##
  
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
-
