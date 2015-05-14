@@ -20,7 +20,7 @@ import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
 import sbt.ConsoleLogger
 
-object SbtVersioning extends sbt.AutoPlugin {
+object SbtGitVersioning extends sbt.AutoPlugin {
 
   val logger = ConsoleLogger()
 
