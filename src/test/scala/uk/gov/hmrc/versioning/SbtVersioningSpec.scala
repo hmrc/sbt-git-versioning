@@ -17,5 +17,13 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
     "return 0.1.0-0-g0000000 when given v0.1.0 (a tag with no added git-describe data)" in {
       SbtGitVersioning.updateTag("v0.1.0") shouldBe "0.1.0-0-g0000000"
     }
+
+    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format)" in {
+      val thrown = intercept[IllegalArgumentException] {
+        SbtGitVersioning.updateTag("v0.1.0-SNAPSHOT")
+      }
+
+      thrown.getMessage shouldBe "invalid version format for 'v0.1.0-SNAPSHOT'"
+    }
   }
 }

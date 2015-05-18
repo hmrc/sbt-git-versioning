@@ -43,9 +43,16 @@ object SbtGitVersioning extends sbt.AutoPlugin {
   def updateTag(tag:String):String={
     val removedV = if (tag.startsWith("v")) tag.drop(1) else tag
 
-    removedV.matches("^.*-.*-g.*$") match {
+    val gitDescribeFormat = """^(\d+\.)?(\d+\.)?(\d+)?.*-.*-g.*$"""
+    val standardFormat    = """^(\d+\.)?(\d+\.)?(\d+)?$"""
+
+    removedV.matches(gitDescribeFormat) match {
       case true  => removedV
-      case false => removedV + "-0-g0000000"
+      case false =>
+        removedV.matches(standardFormat) match {
+        case true => removedV + "-0-g0000000"
+        case false => throw new IllegalArgumentException(s"invalid version format for '$tag'")
+      }
     }
   }
 }
