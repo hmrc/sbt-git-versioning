@@ -2,7 +2,7 @@
 
 [ ![Download](https://api.bintray.com/packages/hmrc/sbt-plugin-releases/sbt-git-versioning/images/download.svg) ](https://bintray.com/hmrc/sbt-plugin-releases/sbt-git-versioning/_latestVersion)
 
-Contains SBT settings in an auto-plugin to version an HMRC SBT project.
+Contains SBT settings in an auto-plugin to version a HMRC SBT project.
 
 ## Usage
 
