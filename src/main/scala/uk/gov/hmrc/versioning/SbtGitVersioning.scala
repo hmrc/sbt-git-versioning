@@ -42,7 +42,7 @@ object SbtGitVersioning extends sbt.AutoPlugin {
 
   def version(tag:String):String={
     val version: String = escapeGitDescribe(escapeTag(tag))
-    logger.info(s"Building '$version'...")
+    logger.info(s"sbt git versioned as $version")
     version
   }
 
