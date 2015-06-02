@@ -32,6 +32,7 @@ object SbtGitVersioning extends sbt.AutoPlugin {
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
     git.gitTagToVersionNumber := { tag => Some(version(tag)) },
+    git.uncommittedSignifier := None,
     git.gitDescribedVersion <<= {
       git.gitDescribedVersion((vO) => {
         val deNulledVersion: Option[String] = vO.flatMap{ vOO => Option(vOO) }

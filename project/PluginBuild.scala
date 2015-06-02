@@ -39,6 +39,7 @@ object PluginBuild extends Build {
       BuildDescriptionSettings(),
       git.useGitDescribe := true,
       git.versionProperty := "NONE",
+      git.uncommittedSignifier := None,
       git.gitTagToVersionNumber := { tag => Some(updateTag(tag)) },
       git.gitDescribedVersion <<= {
         git.gitDescribedVersion((vO) => {
