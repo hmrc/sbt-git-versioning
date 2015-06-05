@@ -6,7 +6,7 @@ Contains SBT settings in an auto-plugin to version a HMRC SBT project.
 
 ## Usage
 
-addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "<INSERT_VERSION>")
+addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "[INSERT_VERSION]")
 
 ## License ##
  
