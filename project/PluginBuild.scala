@@ -32,10 +32,8 @@ object PluginBuild extends Build {
       sbtPlugin := true,
       targetJvm := "jvm-1.7",
       scalaVersion := "2.10.5",
-      resolvers ++= Seq(
-        Resolver.url("bintray-sbt-plugin-releases",
+      resolvers += Resolver.url("bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
-        Resolver.bintrayRepo("hmrc", "sbt-plugin-releases")),
       addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5"),
       BuildDescriptionSettings(),
       git.useGitDescribe := true,
