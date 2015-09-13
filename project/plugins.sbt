@@ -3,9 +3,9 @@ resolvers += Resolver.url("hmrc-sbt-plugin-releases",
   
 resolvers += Resolver.bintrayRepo("hmrc", "releases")  
 
-addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "0.4.0")
+addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.4")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5")
 
 
 
