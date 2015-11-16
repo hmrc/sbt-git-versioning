@@ -30,7 +30,6 @@ object PluginBuild extends Build {
     .enablePlugins(SbtAutoBuildPlugin, GitVersioning)
     .settings(
       sbtPlugin := true,
-      targetJvm := "jvm-1.7",
       scalaVersion := "2.10.5",
       resolvers += Resolver.url("bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
