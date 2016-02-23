@@ -2,7 +2,7 @@
 
 [ ![Download](https://api.bintray.com/packages/hmrc/sbt-plugin-releases/sbt-git-versioning/images/download.svg) ](https://bintray.com/hmrc/sbt-plugin-releases/sbt-git-versioning/_latestVersion) [![Build Status](https://travis-ci.org/hmrc/sbt-git-versioning.svg?branch=v0.8.0)](https://travis-ci.org/hmrc/sbt-git-versioning)
 
-Contains SBT settings in an auto-plugin to version a HMRC SBT project.
+A plugin containing SBT settings to version a HMRC SBT project.
 
 ## Usage
 
