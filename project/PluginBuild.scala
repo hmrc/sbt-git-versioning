@@ -31,6 +31,7 @@ object PluginBuild extends Build {
     .settings(
       sbtPlugin := true,
       scalaVersion := "2.10.5",
+      targetJvm := "jvm-1.7",
       resolvers += Resolver.url("bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
       addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5"),
