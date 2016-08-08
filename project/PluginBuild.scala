@@ -23,7 +23,7 @@ import uk.gov.hmrc.SbtAutoBuildPlugin
 
 
 object PluginBuild extends Build {
-
+  val logger = ConsoleLogger()
   val pluginName = "sbt-git-versioning"
 
   lazy val project = Project(pluginName, file("."))
@@ -39,7 +39,11 @@ object PluginBuild extends Build {
       git.useGitDescribe := true,
       git.versionProperty := "NONE",
       git.uncommittedSignifier := None,
-      git.gitTagToVersionNumber := { tag => Some(updateTag(tag)) },
+      git.gitTagToVersionNumber := { tag =>
+        val version = updateTag(tag)
+        logger.info(s"sbt git versioned as $version")
+        Some(version)
+      },
       git.gitDescribedVersion <<= {
         git.gitDescribedVersion((vO) => {
           val deNulledVersion: Option[String] = vO.flatMap{ vOO => Option(vOO) }
