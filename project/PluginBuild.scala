@@ -34,7 +34,7 @@ object PluginBuild extends Build {
       targetJvm := "jvm-1.7",
       resolvers += Resolver.url("bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
-      addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5"),
+      addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3"),
       BuildDescriptionSettings(),
       git.useGitDescribe := true,
       git.versionProperty := "NONE",
@@ -51,8 +51,8 @@ object PluginBuild extends Build {
         })
       },
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-        "org.pegdown" % "pegdown" % "1.5.0" % "test"
+        "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+        "org.pegdown" % "pegdown" % "1.6.0" % "test"
       )
     )
 
