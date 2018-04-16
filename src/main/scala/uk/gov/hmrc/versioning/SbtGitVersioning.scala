@@ -28,20 +28,24 @@ object SbtGitVersioning extends sbt.AutoPlugin {
 
   override def trigger = allRequirements
 
-  override def projectSettings = Seq (
+  override def projectSettings = Seq(
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
-    git.gitTagToVersionNumber := { tag => Some(version(tag)) },
+    git.gitTagToVersionNumber := { tag =>
+      Some(version(tag))
+    },
     git.uncommittedSignifier := None,
     git.gitDescribedVersion <<= {
       git.gitDescribedVersion((vO) => {
-        val deNulledVersion: Option[String] = vO.flatMap{ vOO => Option(vOO) }
+        val deNulledVersion: Option[String] = vO.flatMap { vOO =>
+          Option(vOO)
+        }
         deNulledVersion map version
       })
     }
   )
 
-  def version(tag:String):String={
+  def version(tag: String): String = {
     val version: String = escapeGitDescribe(escapeTag(tag))
     logger.info(s"sbt git versioned as $version")
     version
@@ -49,19 +53,18 @@ object SbtGitVersioning extends sbt.AutoPlugin {
 
   private def escapeGitDescribe(removedV: String): String = {
     val gitDescribeFormat = """^(\d+\.)?(\d+\.)?(\d+)?.*-.*-g.*$"""
-    val standardFormat = """^(\d+\.)?(\d+\.)?(\d+)?$"""
+    val standardFormat    = """^(\d+\.)?(\d+\.)?(\d+)?$"""
 
     removedV.matches(gitDescribeFormat) match {
       case true => removedV
       case false =>
         removedV.matches(standardFormat) match {
-          case true => removedV + "-0-g0000000"
+          case true  => removedV + "-0-g0000000"
           case false => throw new IllegalArgumentException(s"invalid version format for '$removedV'")
         }
     }
   }
 
-  private def escapeTag(tag: String): String = {
+  private def escapeTag(tag: String): String =
     if (tag.startsWith("v")) tag.drop(1) else tag
-  }
 }

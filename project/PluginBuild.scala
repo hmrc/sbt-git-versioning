@@ -21,9 +21,8 @@ import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.SbtAutoBuildPlugin
 
-
 object PluginBuild extends Build {
-  val logger = ConsoleLogger()
+  val logger     = ConsoleLogger()
   val pluginName = "sbt-git-versioning"
 
   lazy val project = Project(pluginName, file("."))
@@ -32,7 +31,8 @@ object PluginBuild extends Build {
       sbtPlugin := true,
       scalaVersion := "2.10.5",
       targetJvm := "jvm-1.7",
-      resolvers += Resolver.url("bintray-sbt-plugin-releases",
+      resolvers += Resolver.url(
+        "bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
       addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5"),
       BuildDescriptionSettings(),
@@ -46,31 +46,33 @@ object PluginBuild extends Build {
       },
       git.gitDescribedVersion <<= {
         git.gitDescribedVersion((vO) => {
-          val deNulledVersion: Option[String] = vO.flatMap{ vOO => Option(vOO) }
+          val deNulledVersion: Option[String] = vO.flatMap { vOO =>
+            Option(vOO)
+          }
           deNulledVersion map updateTag
         })
       },
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-        "org.pegdown" % "pegdown" % "1.5.0" % "test"
+        "org.pegdown"   % "pegdown"    % "1.5.0" % "test"
       )
     )
 
   /**
-   * This code is copied in [[uk.gov.hmrc.versioning.SbtGitVersioning#updateTag]], that
-   * version is tested and should be copied here. I can't find an easy way to share it :(
-   */
-  def updateTag(tag:String):String={
+    * This code is copied in [[uk.gov.hmrc.versioning.SbtGitVersioning#updateTag]], that
+    * version is tested and should be copied here. I can't find an easy way to share it :(
+    */
+  def updateTag(tag: String): String = {
     val removedV = if (tag.startsWith("v")) tag.drop(1) else tag
 
     val gitDescribeFormat = """^(\d+\.)?(\d+\.)?(\d+)?.*-.*-g.*$"""
     val standardFormat    = """^(\d+\.)?(\d+\.)?(\d+)?$"""
 
     removedV.matches(gitDescribeFormat) match {
-      case true  => removedV
+      case true => removedV
       case false =>
         removedV.matches(standardFormat) match {
-          case true => removedV + "-0-g0000000"
+          case true  => removedV + "-0-g0000000"
           case false => throw new IllegalArgumentException(s"invalid version format for '$tag'")
         }
     }
@@ -79,7 +81,7 @@ object PluginBuild extends Build {
 
 object BuildDescriptionSettings {
 
-  def apply() = 
+  def apply() =
     pomExtra := (<url>https://www.gov.uk/government/organisations/hm-revenue-customs</url>
       <licenses>
         <license>
@@ -104,5 +106,5 @@ object BuildDescriptionSettings {
           <url>http://www.equalexperts.com</url>
         </developer>
       </developers>)
-  
+
 }

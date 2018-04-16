@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.versioning
 
-import org.scalatest.{OptionValues, TryValues, Matchers, WordSpec}
+import org.scalatest.{Matchers, OptionValues, TryValues, WordSpec}
 
 class SbtVersioningSpec extends WordSpec with Matchers with TryValues with OptionValues {
 
