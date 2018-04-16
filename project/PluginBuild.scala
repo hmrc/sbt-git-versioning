@@ -35,7 +35,6 @@ object PluginBuild extends Build {
         "bintray-sbt-plugin-releases",
         url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
       addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5"),
-      BuildDescriptionSettings(),
       git.useGitDescribe := true,
       git.versionProperty := "NONE",
       git.uncommittedSignifier := None,
@@ -55,7 +54,9 @@ object PluginBuild extends Build {
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.2.4" % "test",
         "org.pegdown"   % "pegdown"    % "1.5.0" % "test"
-      )
+      ),
+      fork in Test := true,
+      envVars in Test := Map("TEST_MAKE_RELEASE" -> "true")
     )
 
   /**
@@ -77,34 +78,4 @@ object PluginBuild extends Build {
         }
     }
   }
-}
-
-object BuildDescriptionSettings {
-
-  def apply() =
-    pomExtra := (<url>https://www.gov.uk/government/organisations/hm-revenue-customs</url>
-      <licenses>
-        <license>
-          <name>Apache 2</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-      </licenses>
-      <scm>
-        <connection>scm:git@github.com:hmrc/sbt-bintray-publish.git</connection>
-        <developerConnection>scm:git@github.com:hmrc/sbt-bintray-publish.git</developerConnection>
-        <url>git@github.com:hmrc/sbt-bintray-publish.git</url>
-      </scm>
-      <developers>
-        <developer>
-          <id>charleskubicek</id>
-          <name>Charles Kubicek</name>
-          <url>http://www.equalexperts.com</url>
-        </developer>
-        <developer>
-          <id>duncancrawford</id>
-          <name>Duncan Crawford</name>
-          <url>http://www.equalexperts.com</url>
-        </developer>
-      </developers>)
-
 }

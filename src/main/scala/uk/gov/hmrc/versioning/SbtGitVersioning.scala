@@ -20,13 +20,18 @@ import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
 import sbt.ConsoleLogger
 
-object SbtGitVersioning extends sbt.AutoPlugin {
+import scala.util.Properties
+
+object SbtGitVersioning extends SbtVersioning
+
+trait SbtVersioning extends sbt.AutoPlugin {
 
   val logger = ConsoleLogger()
 
   override def requires = GitVersioning
 
-  override def trigger = allRequirements
+  override def trigger   = allRequirements
+  val makeReleaseEnvName = "MAKE_RELEASE"
 
   override def projectSettings = Seq(
     git.useGitDescribe := true,
@@ -46,25 +51,27 @@ object SbtGitVersioning extends sbt.AutoPlugin {
   )
 
   def version(tag: String): String = {
-    val version: String = escapeGitDescribe(escapeTag(tag))
+    val version: String = Properties.envOrNone(makeReleaseEnvName) match {
+      case Some(_) => makeARelease(tag)
+      case None    => makeASnapshot(tag)
+    }
+
     logger.info(s"sbt git versioned as $version")
     version
   }
 
-  private def escapeGitDescribe(removedV: String): String = {
-    val gitDescribeFormat = """^(\d+\.)?(\d+\.)?(\d+)?.*-.*-g.*$"""
-    val standardFormat    = """^(\d+\.)?(\d+\.)?(\d+)?$"""
+  private val snapshotFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)-(.*-g.*$)""".r
+  private val releaseFormat  = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)$""".r
 
-    removedV.matches(gitDescribeFormat) match {
-      case true => removedV
-      case false =>
-        removedV.matches(standardFormat) match {
-          case true  => removedV + "-0-g0000000"
-          case false => throw new IllegalArgumentException(s"invalid version format for '$removedV'")
-        }
-    }
+  private val makeARelease: String => String = {
+    case releaseFormat(major, minor, patch) => s"$major.$minor.$patch"
+    case snapshotFormat(major, minor, _, _) => s"$major.${Integer.valueOf(minor) + 1}.0"
+    case tag                                => throw new IllegalArgumentException(s"invalid version format for '$tag'")
   }
 
-  private def escapeTag(tag: String): String =
-    if (tag.startsWith("v")) tag.drop(1) else tag
+  private val makeASnapshot: String => String = {
+    case snapshotFormat(major, minor, patch, sha) => s"$major.$minor.$patch-$sha"
+    case releaseFormat(major, minor, patch)       => s"$major.$minor.$patch-0-g0000000"
+    case tag                                      => throw new IllegalArgumentException(s"invalid version format for '$tag'")
+  }
 }
