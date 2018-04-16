@@ -22,16 +22,16 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
   "SbtVersioning.updateTag" should {
 
-    "return 0.1.0-1-g1234567 (stay the same) with a tag 0.1.0-1-g1234567" in {
-      SbtGitVersioning.version("0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
+    "return 0.1.0-1-g1234567 (stay the same) with a tag 0.1.0-1-g1234567" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
     }
 
-    "return 0.1.0-1-g1234567 when given v0.1.0-1-g1234567 (a tag with trailing 'v')" in {
-      SbtGitVersioning.version("v0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
+    "return 0.1.0-1-g1234567 when given v0.1.0-1-g1234567 (a tag with trailing 'v')" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("v0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
     }
 
-    "return 0.1.0-0-g0000000 when given v0.1.0 (a tag with no added git-describe data)" in {
-      SbtGitVersioning.version("v0.1.0") shouldBe "0.1.0-0-g0000000"
+    "return 0.1.0-0-g0000000 when given v0.1.0 (a tag with no added git-describe data)" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("v0.1.0") shouldBe "0.1.0-0-g0000000"
     }
 
     "return a release when TEST_MAKE_RELEASE is set" in new TestSetupForRelease {
@@ -50,9 +50,9 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
       SbtGitVersioningForRelease.version("v0.2.0") shouldBe "0.2.0"
     }
 
-    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format) when making a snapshot" in {
+    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format) when making a snapshot" in new TestSetupForSnapshot {
       val thrown = intercept[IllegalArgumentException] {
-        SbtGitVersioning.version("v0.1.0-SNAPSHOT")
+        SbtGitVersioningForSnapshot.version("v0.1.0-SNAPSHOT")
       }
 
       thrown.getMessage shouldBe "invalid version format for 'v0.1.0-SNAPSHOT'"
@@ -67,6 +67,11 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
     }
   }
 
+  trait TestSetupForSnapshot {
+    val SbtGitVersioningForSnapshot = new SbtVersioning {
+      override val makeReleaseEnvName: String = "TEST_MAKE_SNAPSHOT"
+    }
+  }
   trait TestSetupForRelease {
     val SbtGitVersioningForRelease = new SbtVersioning {
       override val makeReleaseEnvName: String = "TEST_MAKE_RELEASE"

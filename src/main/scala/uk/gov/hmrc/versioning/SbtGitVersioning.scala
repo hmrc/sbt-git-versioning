@@ -36,9 +36,7 @@ trait SbtVersioning extends sbt.AutoPlugin {
   override def projectSettings = Seq(
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
-    git.gitTagToVersionNumber := { tag =>
-      Some(version(tag))
-    },
+    git.gitTagToVersionNumber := (tag => Some(version(tag))),
     git.uncommittedSignifier := None
   )
 
