@@ -16,30 +16,65 @@
 
 package uk.gov.hmrc.versioning
 
-import org.scalatest.{OptionValues, TryValues, Matchers, WordSpec}
+import org.scalatest.{Matchers, OptionValues, TryValues, WordSpec}
 
 class SbtVersioningSpec extends WordSpec with Matchers with TryValues with OptionValues {
 
   "SbtVersioning.updateTag" should {
 
-    "return 0.1.0-1-g1234567 (stay the same) with a tag 0.1.0-1-g1234567" in {
-      SbtGitVersioning.version("0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
+    "return 0.1.0-1-g1234567 (stay the same) with a tag 0.1.0-1-g1234567" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
     }
 
-    "return 0.1.0-1-g1234567 when given v0.1.0-1-g1234567 (a tag with trailing 'v')" in {
-      SbtGitVersioning.version("v0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
+    "return 0.1.0-1-g1234567 when given v0.1.0-1-g1234567 (a tag with trailing 'v')" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("v0.1.0-1-g1234567") shouldBe "0.1.0-1-g1234567"
     }
 
-    "return 0.1.0-0-g0000000 when given v0.1.0 (a tag with no added git-describe data)" in {
-      SbtGitVersioning.version("v0.1.0") shouldBe "0.1.0-0-g0000000"
+    "return 0.1.0-0-g0000000 when given v0.1.0 (a tag with no added git-describe data)" in new TestSetupForSnapshot {
+      SbtGitVersioningForSnapshot.version("v0.1.0") shouldBe "0.1.0-0-g0000000"
     }
 
-    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format)" in {
+    "return a release when TEST_MAKE_RELEASE is set" in new TestSetupForRelease {
+      SbtGitVersioningForRelease.version("v0.1.0-1-g1234567") shouldBe "0.2.0"
+    }
+
+    "return the same release twice" in new TestSetupForRelease {
+      SbtGitVersioningForRelease.version("0.2.0") shouldBe "0.2.0"
+    }
+
+    "support release/0.2.0. Legacy private services" in new TestSetupForRelease {
+      SbtGitVersioningForRelease.version("release/0.2.0") shouldBe "0.2.0"
+    }
+
+    "support v0.2.0. Open services" in new TestSetupForRelease {
+      SbtGitVersioningForRelease.version("v0.2.0") shouldBe "0.2.0"
+    }
+
+    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format) when making a snapshot" in new TestSetupForSnapshot {
       val thrown = intercept[IllegalArgumentException] {
-        SbtGitVersioning.version("v0.1.0-SNAPSHOT")
+        SbtGitVersioningForSnapshot.version("v0.1.0-SNAPSHOT")
       }
 
-      thrown.getMessage shouldBe "invalid version format for '0.1.0-SNAPSHOT'"
+      thrown.getMessage shouldBe "invalid version format for 'v0.1.0-SNAPSHOT'"
+    }
+
+    "throw exception when given v0.1.0-SNAPSHOT (a tag with an incorrect format) when making a release" in new TestSetupForRelease {
+      val thrown = intercept[IllegalArgumentException] {
+        SbtGitVersioningForRelease.version("v0.1.0-SNAPSHOT")
+      }
+
+      thrown.getMessage shouldBe "invalid version format for 'v0.1.0-SNAPSHOT'"
+    }
+  }
+
+  trait TestSetupForSnapshot {
+    val SbtGitVersioningForSnapshot = new SbtVersioning {
+      override val makeReleaseEnvName: String = "TEST_MAKE_SNAPSHOT"
+    }
+  }
+  trait TestSetupForRelease {
+    val SbtGitVersioningForRelease = new SbtVersioning {
+      override val makeReleaseEnvName: String = "TEST_MAKE_RELEASE"
     }
   }
 }
