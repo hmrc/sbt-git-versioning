@@ -25,7 +25,7 @@ lazy val project = Project(pluginName, file("."))
     git.versionProperty := "NONE",
     git.uncommittedSignifier := None,
     git.gitTagToVersionNumber := {
-      gitDescribe => Some(version(gitDescribe, Some(1)))
+      gitDescribe => Some(version(gitDescribe, 1))
     },
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "2.2.4" % "test",
@@ -39,7 +39,7 @@ lazy val project = Project(pluginName, file("."))
   * Copied from uk.gov.hmrc.versioning.SbtVersioning to allow
   * correct versioning of this plugin
   */
-def version(gitDescribe: String, majorVersion: Option[Int]): String = {
+def version(gitDescribe: String, majorVersion: Int): String = {
 
   val version: String = Properties.envOrNone("MAKE_RELEASE") match {
     case Some(_) => nextVersion(gitDescribe, majorVersion)
@@ -52,15 +52,16 @@ def version(gitDescribe: String, majorVersion: Option[Int]): String = {
 
 val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
 
-def nextVersion(gitDescribe: String, majorVersion: Option[Int]): String =
-  (gitDescribe, majorVersion) match {
-    case (gitDescribeFormat(major, _, _), Some(newMajor)) if newMajor != major.toInt =>
-      s"$newMajor.0.0"
+def nextVersion(gitDescribe: String, majorVersion: Int): String =
+  gitDescribe match {
+    case gitDescribeFormat(major, _, _) if majorVersion != major.toInt =>
+      s"$majorVersion.0.0"
 
-    case (gitDescribeFormat(major, minor, patch), _) =>
+    case gitDescribeFormat(major, minor, patch) =>
       s"$major.${minor.toInt + 1}.$patch"
 
-    case (unrecognizedGitDescribe, _) =>
+    case unrecognizedGitDescribe =>
       throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
   }
+
 

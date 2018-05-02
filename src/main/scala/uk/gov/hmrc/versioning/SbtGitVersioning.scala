@@ -26,11 +26,7 @@ object SbtGitVersioning extends SbtVersioning
 
 trait SbtVersioning extends sbt.AutoPlugin {
 
-  lazy val majorVersion = settingKey[Option[Int]]("Sets the current major version")
-
-  override def globalSettings: Seq[Def.Setting[_]] = Seq(
-    majorVersion := None
-  )
+  lazy val majorVersion = settingKey[Int]("Sets the current major version")
 
   val logger = ConsoleLogger()
 
@@ -46,7 +42,7 @@ trait SbtVersioning extends sbt.AutoPlugin {
     git.uncommittedSignifier := None
   )
 
-  def version(gitDescribe: String, majorVersion: Option[Int]): String = {
+  def version(gitDescribe: String, majorVersion: Int): String = {
 
     val version: String = Properties.envOrNone(makeReleaseEnvName) match {
       case Some(_) => nextVersion(gitDescribe, majorVersion)
@@ -59,15 +55,15 @@ trait SbtVersioning extends sbt.AutoPlugin {
 
   private val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
 
-  private def nextVersion(gitDescribe: String, majorVersion: Option[Int]): String =
-    (gitDescribe, majorVersion) match {
-      case (gitDescribeFormat(major, _, _), Some(newMajor)) if newMajor != major.toInt =>
-        s"$newMajor.0.0"
+  private def nextVersion(gitDescribe: String, majorVersion: Int): String =
+    gitDescribe match {
+      case gitDescribeFormat(major, _, _) if majorVersion != major.toInt =>
+        s"$majorVersion.0.0"
 
-      case (gitDescribeFormat(major, minor, patch), _) =>
+      case gitDescribeFormat(major, minor, patch) =>
         s"$major.${minor.toInt + 1}.$patch"
 
-      case (unrecognizedGitDescribe, _) =>
+      case unrecognizedGitDescribe =>
         throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
     }
 
