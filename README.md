@@ -4,6 +4,9 @@
 
 A plugin containing SBT settings to version a HMRC SBT project.
 
+This plugin uses a previous version of itself to set sbt version.
+Please update if you make changes to it.
+
 ## Usage
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "[INSERT_VERSION]")
