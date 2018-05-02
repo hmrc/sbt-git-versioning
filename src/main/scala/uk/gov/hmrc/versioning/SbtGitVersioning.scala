@@ -18,13 +18,13 @@ package uk.gov.hmrc.versioning
 
 import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
-import sbt.{ConsoleLogger, Def, _}
+import sbt.{ConsoleLogger, _}
 
 import scala.util.Properties
 
-object SbtGitVersioning extends SbtVersioning
+object SbtGitVersioning extends SbtGitVersioning
 
-trait SbtVersioning extends sbt.AutoPlugin {
+trait SbtGitVersioning extends sbt.AutoPlugin {
 
   lazy val majorVersion = settingKey[Int]("Sets the current major version")
 
@@ -53,18 +53,32 @@ trait SbtVersioning extends sbt.AutoPlugin {
     version
   }
 
-  private val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
+  private object AsInt {
+    def unapply(arg: String): Option[Int] = Some(arg.toInt)
+  }
 
-  private def nextVersion(gitDescribe: String, majorVersion: Int): String =
+  def nextVersion(gitDescribe: String, requestedMajorVersion: Int): String = {
+    val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(?:\d+)(?:-.*-g.*$){0,1}""".r
+
+    def validMajorVersion(current: Int, requested: Int): Boolean =
+      requested == current || requested == current + 1
+
     gitDescribe match {
-      case gitDescribeFormat(major, _, _) if majorVersion != major.toInt =>
-        s"$majorVersion.0.0"
+      case gitDescribeFormat(AsInt(major), _) if !validMajorVersion(major, requestedMajorVersion) =>
+        throw new IllegalArgumentException(
+          s"Invalid majorVersion: $requestedMajorVersion. " +
+            s"The accepted values are $major or ${major + 1} based on current git tags."
+        )
 
-      case gitDescribeFormat(major, minor, patch) =>
-        s"$major.${minor.toInt + 1}.$patch"
+      case gitDescribeFormat(AsInt(major), _) if requestedMajorVersion != major =>
+        s"$requestedMajorVersion.0.0"
+
+      case gitDescribeFormat(major, AsInt(minor)) =>
+        s"$major.${minor + 1}.0"
 
       case unrecognizedGitDescribe =>
         throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
     }
+  }
 
 }

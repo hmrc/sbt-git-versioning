@@ -20,70 +20,70 @@ import org.scalatest.{Matchers, OptionValues, TryValues, WordSpec}
 
 class SbtVersioningSpec extends WordSpec with Matchers with TryValues with OptionValues {
 
-  "SbtVersioning.version - when making a SNAPSHOT" should {
-
-    "return 0.2.0-SNAPSHOT when git describe is v0.1.0-1-g1234567" in new TestSetupForSnapshot {
-      SbtGitVersioningForSnapshot.version("v0.1.0-1-g1234567", 0) shouldBe "0.2.0-SNAPSHOT"
+  "nextVersion" should {
+    "return 0.2.0-SNAPSHOT when git describe is v0.1.1-1-g1234567" in {
+      SbtGitVersioning.nextVersion("v0.1.1-1-g1234567", 0) shouldBe "0.2.0"
     }
 
-    "return 0.2.0-SNAPSHOT when git describe is v0.1.0 (a tag on HEAD)" in new TestSetupForSnapshot {
-      SbtGitVersioningForSnapshot.version("v0.1.0", 0) shouldBe "0.2.0-SNAPSHOT"
+    "return 0.2.0 when git describe is v0.1.0 (a tag on HEAD)" in {
+      SbtGitVersioning.nextVersion("v0.1.0", 0) shouldBe "0.2.0"
     }
 
-    "throw exception when given v0.1.0.1 (a tag with an incorrect format)" in new TestSetupForSnapshot {
+    "throw exception when given v0.1.0.1 (a tag with an incorrect format)" in {
       intercept[IllegalArgumentException] {
-        SbtGitVersioningForSnapshot.version("v0.1.0.1", 0)
+        SbtGitVersioning.nextVersion("v0.1.0.1", 0)
       }.getMessage shouldBe "invalid version format for 'v0.1.0.1'"
     }
 
-    "use the new major version" in new TestSetupForSnapshot {
-      SbtGitVersioningForSnapshot.version("v0.1.0-1-g1234567", 1) shouldBe "1.0.0-SNAPSHOT"
+    "use the new major version" in {
+      SbtGitVersioning.nextVersion("v0.1.0-1-g1234567", 1) shouldBe "1.0.0"
     }
 
-    "use the new major version and return 1.0.0-SNAPSHOT when given v0.1.0 (a tag on HEAD)" in new TestSetupForSnapshot {
-      SbtGitVersioningForSnapshot.version("v0.1.0", 1) shouldBe "1.0.0-SNAPSHOT"
-    }
-  }
-
-  "SbtVersioning.version - when making a RELEASE (MAKE_RELEASE env var is set)" should {
-
-    "return a release when TEST_MAKE_RELEASE is set" in new TestSetupForRelease {
-      SbtGitVersioningForRelease.version("v0.1.0-1-g1234567", 0) shouldBe "0.2.0"
+    "use the new major version and return 1.0.0 when given v0.1.0 (a tag on HEAD)" in {
+      SbtGitVersioning.nextVersion("v0.1.0", 1) shouldBe "1.0.0"
     }
 
-    "always increment the minor version - major version is not specified" in new TestSetupForRelease {
-      SbtGitVersioningForRelease.version("v0.2.0", 0) shouldBe "0.3.0"
-    }
-
-    "support release/0.2.0 - Legacy private services" in new TestSetupForRelease {
-      SbtGitVersioningForRelease.version("release/0.2.0", 0) shouldBe "0.3.0"
-    }
-
-    "throw exception when given v0.1.0.1 (a tag with an incorrect format)" in new TestSetupForRelease {
+    "throw exception if new major version is > current version + 1" in {
       intercept[IllegalArgumentException] {
-        SbtGitVersioningForRelease.version("v0.1.0.1", 0)
-      }.getMessage shouldBe "invalid version format for 'v0.1.0.1'"
+        SbtGitVersioning.nextVersion("v0.1.0", 2)
+      }.getMessage shouldBe "Invalid majorVersion: 2. The accepted values are 0 or 1 based on current git tags."
     }
 
-    "use the major version if provided" in new TestSetupForRelease {
-      SbtGitVersioningForRelease.version("v0.1.0-1-g1234567", 1) shouldBe "1.0.0"
+    "throw exception if new major version is < current version" in {
+      intercept[IllegalArgumentException] {
+        SbtGitVersioning.nextVersion("v1.1.0", 0)
+      }.getMessage shouldBe "Invalid majorVersion: 0. The accepted values are 1 or 2 based on current git tags."
     }
-
-    "use the major version and return 1.0.0 when HEAD has a tag already. Can only happen on local dev environments" in new TestSetupForRelease {
-      SbtGitVersioningForRelease.version("v0.2.0", 1) shouldBe "1.0.0"
-    }
-
   }
 
-  trait TestSetupForSnapshot {
-    val SbtGitVersioningForSnapshot = new SbtVersioning {
-      // overriding the default MAKE_RELEASE as it is set in the CI, affecting the tests
-      override val makeReleaseEnvName: String = "UNUSED"
+  "version" should {
+
+    /*
+     * Plugin will return either a snapshot version or release version.
+     * This is decided based on whether an environment variable MAKE_RELEASE is set.
+     * Since CI will have this variable set by default this test
+     * overrides the expected environment variable name to TEST_MAKE_RELEASE
+     * which is made available in build.sbt or DUMMY_ENV_VAR which is unset
+     * to allow unit testing.
+     */
+
+    "return next version with -SNAPSHOT suffix if MAKE_RELEASE env variable not set" in {
+      val makeReleaseEnvVar = "DUMMY_ENV_VAR"
+      val sbtGitVersioning = new SbtGitVersioning {
+        override val makeReleaseEnvName: String = makeReleaseEnvVar
+      }
+
+      sbtGitVersioning.version("v1.1.0", 1) shouldBe "1.2.0-SNAPSHOT"
+    }
+
+    "return next version if MAKE_RELEASE env var is set" in {
+      val makeReleaseEnvVar = "TEST_MAKE_RELEASE" // made available in build.sbt
+      val sbtGitVersioning = new SbtGitVersioning {
+        override val makeReleaseEnvName: String = makeReleaseEnvVar
+      }
+
+      sbtGitVersioning.version("v1.1.0", 1) shouldBe "1.2.0"
     }
   }
-  trait TestSetupForRelease {
-    val SbtGitVersioningForRelease = new SbtVersioning {
-      override val makeReleaseEnvName: String = "TEST_MAKE_RELEASE" // setup in build.sbt to provide env var for tests
-    }
-  }
+
 }
