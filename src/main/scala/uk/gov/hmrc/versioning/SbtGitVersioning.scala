@@ -18,13 +18,19 @@ package uk.gov.hmrc.versioning
 
 import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
-import sbt.ConsoleLogger
+import sbt.{ConsoleLogger, Def, _}
 
 import scala.util.Properties
 
 object SbtGitVersioning extends SbtVersioning
 
 trait SbtVersioning extends sbt.AutoPlugin {
+
+  lazy val majorVersion = settingKey[Option[Int]]("Sets the current major version")
+
+  override def globalSettings: Seq[Def.Setting[_]] = Seq(
+    majorVersion := None
+  )
 
   val logger = ConsoleLogger()
 
@@ -36,32 +42,33 @@ trait SbtVersioning extends sbt.AutoPlugin {
   override def projectSettings = Seq(
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
-    git.gitTagToVersionNumber := (tag => Some(version(tag))),
+    git.gitTagToVersionNumber := (tag => Some(version(tag, majorVersion.value))),
     git.uncommittedSignifier := None
   )
 
-  def version(tag: String): String = {
+  def version(gitDescribe: String, majorVersion: Option[Int]): String = {
+
     val version: String = Properties.envOrNone(makeReleaseEnvName) match {
-      case Some(_) => makeARelease(tag)
-      case None    => makeASnapshot(tag)
+      case Some(_) => nextVersion(gitDescribe, majorVersion)
+      case None    => nextVersion(gitDescribe, majorVersion) + "-SNAPSHOT"
     }
 
     logger.info(s"sbt git versioned as $version")
     version
   }
 
-  private val snapshotFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)-(.*-g.*$)""".r
-  private val releaseFormat  = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)$""".r
+  private val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
 
-  private val makeARelease: String => String = {
-    case releaseFormat(major, minor, patch) => s"$major.$minor.$patch"
-    case snapshotFormat(major, minor, _, _) => s"$major.${Integer.valueOf(minor) + 1}.0"
-    case tag                                => throw new IllegalArgumentException(s"invalid version format for '$tag'")
-  }
+  private def nextVersion(gitDescribe: String, majorVersion: Option[Int]): String =
+    (gitDescribe, majorVersion) match {
+      case (gitDescribeFormat(major, _, _), Some(newMajor)) if newMajor != major.toInt =>
+        s"$newMajor.0.0"
 
-  private val makeASnapshot: String => String = {
-    case snapshotFormat(major, minor, patch, sha) => s"$major.$minor.$patch-$sha"
-    case releaseFormat(major, minor, patch)       => s"$major.$minor.$patch-0-g0000000"
-    case tag                                      => throw new IllegalArgumentException(s"invalid version format for '$tag'")
-  }
+      case (gitDescribeFormat(major, minor, patch), _) =>
+        s"$major.${minor.toInt + 1}.$patch"
+
+      case (unrecognizedGitDescribe, _) =>
+        throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
+    }
+
 }
