@@ -59,21 +59,14 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
   )
 
   def versionComparator(tag1: String, tag2: String): Boolean = {
-    val releaseFormat = """(?:release\/|v)(\d+)\.(\d+)\.(\d+)""".r
+    val Version = """(?:release\/|v)(\d+)\.(\d+)\.(\d+)""".r
     (tag1, tag2) match {
-      case (releaseFormat(major1, minor1, hotfix1), releaseFormat(major2, minor2, hotfix2)) =>
-        if (major1.toInt == major2.toInt) {
-          if (minor1.toInt == minor2.toInt) {
-            hotfix1.toInt < hotfix2.toInt
-          } else {
-            minor1.toInt < minor2.toInt
-          }
-        } else {
-          major1.toInt < major2.toInt
-        }
-      case (releaseFormat(_, _, _), _) => false
-      case (_, releaseFormat(_, _, _)) => true
-      case (_, _)                      => true
+      case (Version(AsInt(major1), _, _), Version(AsInt(major2), _, _)) if major1 != major2 => major1 < major2
+      case (Version(_, AsInt(minor1), _), Version(_, AsInt(minor2), _)) if minor1 != minor2 => minor1 < minor2
+      case (Version(_, _, AsInt(patch1)), Version(_, _, AsInt(patch2))) if patch1 != patch2 => patch1 < patch2
+      case (Version(_, _, _), _)                                                            => false
+      case (_, Version(_, _, _))                                                            => true
+      case (_, _)                                                                           => true
     }
   }
 

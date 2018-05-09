@@ -120,6 +120,9 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
     "deprioritize tags in unknown formats" in {
       assertOrder(List("not-a-valid-tag", "not-a-valid-tag", "v0.1.0", "v1.0.0"))
     }
+    "work for both v and release/ styles" in {
+      assertOrder(List("release/1.0.0", "release/1.1.0", "v2.0.0"))
+    }
   }
 
   def assertOrder(expectedOrder: List[String]): Unit =
