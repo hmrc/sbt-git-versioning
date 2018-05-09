@@ -25,7 +25,7 @@ lazy val project = Project(pluginName, file("."))
       "org.pegdown"   % "pegdown"    % "1.5.0" % "test"
     ),
     fork in Test := true,
-    envVars in Test := Map("TEST_MAKE_RELEASE" -> "true")
+    envVars in Test := Map("TEST_MAKE_RELEASE" -> "true", "TEST_MAKE_HOTFIX" -> "true")
   )
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5")

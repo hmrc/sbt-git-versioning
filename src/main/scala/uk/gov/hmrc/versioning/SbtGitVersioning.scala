@@ -34,6 +34,7 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
 
   override def trigger   = allRequirements
   val makeReleaseEnvName = "MAKE_RELEASE"
+  val makeHotfixEnvName  = "MAKE_HOTFIX"
 
   override def projectSettings = Seq(
     git.useGitDescribe := true,
@@ -58,22 +59,32 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
   }
 
   def nextVersion(gitDescribe: String, requestedMajorVersion: Int): String = {
-    val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(?:\d+)(?:-.*-g.*$){0,1}""".r
+    val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
 
     def validMajorVersion(current: Int, requested: Int): Boolean =
       requested == current || requested == current + 1
 
+    val makeHotfix = Properties.envOrNone(makeHotfixEnvName).fold(false)(_.toBoolean)
+
     gitDescribe match {
-      case gitDescribeFormat(AsInt(major), _) if !validMajorVersion(major, requestedMajorVersion) =>
+      case gitDescribeFormat(AsInt(major), _, _) if major != requestedMajorVersion && makeHotfix =>
+        throw new IllegalArgumentException(
+          s"Invalid majorVersion: $requestedMajorVersion. $makeHotfixEnvName is also set to true. " +
+            "It is not possible to change the major version as part of a hotfix."
+        )
+      case gitDescribeFormat(AsInt(major), _, _) if !validMajorVersion(major, requestedMajorVersion) =>
         throw new IllegalArgumentException(
           s"Invalid majorVersion: $requestedMajorVersion. " +
             s"The accepted values are $major or ${major + 1} based on current git tags."
         )
 
-      case gitDescribeFormat(AsInt(major), _) if requestedMajorVersion != major =>
+      case gitDescribeFormat(AsInt(major), _, _) if requestedMajorVersion != major =>
         s"$requestedMajorVersion.0.0"
 
-      case gitDescribeFormat(major, AsInt(minor)) =>
+      case gitDescribeFormat(major, minor, AsInt(patch)) if makeHotfix =>
+        s"$major.$minor.${patch + 1}"
+
+      case gitDescribeFormat(major, AsInt(minor), _) =>
         s"$major.${minor + 1}.0"
 
       case unrecognizedGitDescribe =>
