@@ -18,6 +18,8 @@ package uk.gov.hmrc.versioning
 
 import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
+import com.typesafe.sbt.git.{ConsoleGitRunner, DefaultReadableGit}
+import sbt.Keys.baseDirectory
 import sbt.{ConsoleLogger, _}
 
 import scala.util.Properties
@@ -39,20 +41,40 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
   override def projectSettings = Seq(
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
+    git.gitDescribedVersion := {
+      // using local git instead of JGit which returned incorrect `describe`
+      // when there are many tags attached to the same commit
+      val gitDescribeFromNonJGit = ConsoleGitRunner("describe")(baseDirectory.value)
+      Some(version(gitDescribeFromNonJGit, majorVersion.value))
+    },
+    git.gitCurrentTags := {
+      // overriding default lexicographic order of tags and sorting tags
+      // according to our versioning
+      new DefaultReadableGit(baseDirectory.value)
+        .withGit(_.currentTags)
+        .sortWith(versionComparator)
+    },
     git.gitTagToVersionNumber := (tag => Some(version(tag, majorVersion.value))),
     git.uncommittedSignifier := None
   )
 
-  def version(gitDescribe: String, majorVersion: Int): String = {
-
-    val version: String = Properties.envOrNone(makeReleaseEnvName) match {
-      case Some(_) => nextVersion(gitDescribe, majorVersion)
-      case None    => nextVersion(gitDescribe, majorVersion) + "-SNAPSHOT"
+  def versionComparator(tag1: String, tag2: String): Boolean = {
+    val Version = """(?:release\/|v)(\d+)\.(\d+)\.(\d+)""".r
+    (tag1, tag2) match {
+      case (Version(AsInt(major1), _, _), Version(AsInt(major2), _, _)) if major1 != major2 => major1 < major2
+      case (Version(_, AsInt(minor1), _), Version(_, AsInt(minor2), _)) if minor1 != minor2 => minor1 < minor2
+      case (Version(_, _, AsInt(patch1)), Version(_, _, AsInt(patch2))) if patch1 != patch2 => patch1 < patch2
+      case (Version(_, _, _), _)                                                            => false
+      case (_, Version(_, _, _))                                                            => true
+      case (_, _)                                                                           => true
     }
-
-    logger.info(s"sbt git versioned as $version")
-    version
   }
+
+  def version(tagOrGitDescribe: String, majorVersion: Int): String =
+    Properties.envOrNone(makeReleaseEnvName) match {
+      case Some(_) => nextVersion(tagOrGitDescribe, majorVersion)
+      case None    => nextVersion(tagOrGitDescribe, majorVersion) + "-SNAPSHOT"
+    }
 
   private object AsInt {
     def unapply(arg: String): Option[Int] = Some(arg.toInt)

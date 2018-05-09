@@ -28,4 +28,4 @@ lazy val project = Project(pluginName, file("."))
     envVars in Test := Map("TEST_MAKE_RELEASE" -> "true", "TEST_MAKE_HOTFIX" -> "true")
   )
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
