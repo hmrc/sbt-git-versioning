@@ -43,6 +43,25 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
       SbtGitVersioning.nextVersion("v0.1.0", 1) shouldBe "1.0.0"
     }
 
+    "create a new patch if MAKE_HOTFIX is true" in {
+      val makeHotfixEnvVar = "TEST_MAKE_HOTFIX" // made available in build.sbt
+      val sbtGitVersioning = new SbtGitVersioning {
+        override val makeHotfixEnvName: String = makeHotfixEnvVar
+      }
+      sbtGitVersioning.nextVersion("v0.1.0", 0) shouldBe "0.1.1"
+    }
+
+    "throw an exception if a new major is requested at the same time as a hotfix" in {
+      val makeHotfixEnvVar = "TEST_MAKE_HOTFIX" // made available in build.sbt
+      val sbtGitVersioning = new SbtGitVersioning {
+        override val makeHotfixEnvName: String = makeHotfixEnvVar
+      }
+      intercept[IllegalArgumentException] {
+        sbtGitVersioning.nextVersion("v0.1.0", 1)
+      }.getMessage shouldBe "Invalid majorVersion: 1. TEST_MAKE_HOTFIX is also set to true. " +
+        "It is not possible to change the major version as part of a hotfix."
+    }
+
     "throw exception if new major version is > current version + 1" in {
       intercept[IllegalArgumentException] {
         SbtGitVersioning.nextVersion("v0.1.0", 2)
