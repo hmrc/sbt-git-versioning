@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.versioning
 
+import java.io.PrintWriter
+
 import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
 import com.typesafe.sbt.git.{ConsoleGitRunner, DefaultReadableGit}
+import org.eclipse.jgit.util.io.NullOutputStream
 import sbt.Keys.baseDirectory
 import sbt.{ConsoleLogger, _}
 
@@ -44,7 +47,8 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
     git.gitDescribedVersion := {
       // using local git instead of JGit which returned incorrect `describe`
       // when there are many tags attached to the same commit
-      val gitDescribeFromNonJGit = ConsoleGitRunner("describe")(baseDirectory.value)
+      val gitDescribeFromNonJGit =
+        ConsoleGitRunner("describe")(baseDirectory.value, ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
       Some(version(gitDescribeFromNonJGit, majorVersion.value))
     },
     git.gitCurrentTags := {
