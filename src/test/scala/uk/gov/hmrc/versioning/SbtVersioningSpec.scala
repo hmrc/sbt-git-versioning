@@ -24,25 +24,29 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
   "nextVersion" should {
     "return 0.2.0-SNAPSHOT when git describe is v0.1.1-1-g1234567" in {
-      SbtGitVersioning.nextVersion("v0.1.1-1-g1234567", 0) shouldBe "0.2.0"
+      SbtGitVersioning.nextVersion("v0.1.1-1-g1234567", None, 0) shouldBe "0.2.0"
     }
 
     "return 0.2.0 when git describe is v0.1.0 (a tag on HEAD)" in {
-      SbtGitVersioning.nextVersion("v0.1.0", 0) shouldBe "0.2.0"
+      SbtGitVersioning.nextVersion("v0.1.0", None, 0) shouldBe "0.2.0"
+    }
+
+    "return 0.1.0 when git describe returns the id on HEAD (no tags)" in {
+      SbtGitVersioning.nextVersion("12345", Some("123456789"), 0) shouldBe "0.1.0"
     }
 
     "throw exception when given v0.1.0.1 (a tag with an incorrect format)" in {
       intercept[IllegalArgumentException] {
-        SbtGitVersioning.nextVersion("v0.1.0.1", 0)
+        SbtGitVersioning.nextVersion("v0.1.0.1", None, 0)
       }.getMessage shouldBe "invalid version format for 'v0.1.0.1'"
     }
 
     "use the new major version" in {
-      SbtGitVersioning.nextVersion("v0.1.0-1-g1234567", 1) shouldBe "1.0.0"
+      SbtGitVersioning.nextVersion("v0.1.0-1-g1234567", None, 1) shouldBe "1.0.0"
     }
 
     "use the new major version and return 1.0.0 when given v0.1.0 (a tag on HEAD)" in {
-      SbtGitVersioning.nextVersion("v0.1.0", 1) shouldBe "1.0.0"
+      SbtGitVersioning.nextVersion("v0.1.0", None, 1) shouldBe "1.0.0"
     }
 
     "create a new patch if MAKE_HOTFIX is true" in {
@@ -50,7 +54,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
       val sbtGitVersioning = new SbtGitVersioning {
         override val makeHotfixEnvName: String = makeHotfixEnvVar
       }
-      sbtGitVersioning.nextVersion("v0.1.0", 0) shouldBe "0.1.1"
+      sbtGitVersioning.nextVersion("v0.1.0", None, 0) shouldBe "0.1.1"
     }
 
     "throw an exception if a new major is requested at the same time as a hotfix" in {
@@ -59,20 +63,20 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
         override val makeHotfixEnvName: String = makeHotfixEnvVar
       }
       intercept[IllegalArgumentException] {
-        sbtGitVersioning.nextVersion("v0.1.0", 1)
+        sbtGitVersioning.nextVersion("v0.1.0", None, 1)
       }.getMessage shouldBe "Invalid majorVersion: 1. TEST_MAKE_HOTFIX is also set to true. " +
         "It is not possible to change the major version as part of a hotfix."
     }
 
     "throw exception if new major version is > current version + 1" in {
       intercept[IllegalArgumentException] {
-        SbtGitVersioning.nextVersion("v0.1.0", 2)
+        SbtGitVersioning.nextVersion("v0.1.0", None, 2)
       }.getMessage shouldBe "Invalid majorVersion: 2. The accepted values are 0 or 1 based on current git tags."
     }
 
     "throw exception if new major version is < current version" in {
       intercept[IllegalArgumentException] {
-        SbtGitVersioning.nextVersion("v1.1.0", 0)
+        SbtGitVersioning.nextVersion("v1.1.0", None, 0)
       }.getMessage shouldBe "Invalid majorVersion: 0. The accepted values are 1 or 2 based on current git tags."
     }
   }
@@ -94,7 +98,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
         override val makeReleaseEnvName: String = makeReleaseEnvVar
       }
 
-      sbtGitVersioning.version("v1.1.0", 1) shouldBe "1.2.0-SNAPSHOT"
+      sbtGitVersioning.version("v1.1.0", None, 1) shouldBe "1.2.0-SNAPSHOT"
     }
 
     "return next version if MAKE_RELEASE env var is set" in {
@@ -103,7 +107,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
         override val makeReleaseEnvName: String = makeReleaseEnvVar
       }
 
-      sbtGitVersioning.version("v1.1.0", 1) shouldBe "1.2.0"
+      sbtGitVersioning.version("v1.1.0", None, 1) shouldBe "1.2.0"
     }
   }
 

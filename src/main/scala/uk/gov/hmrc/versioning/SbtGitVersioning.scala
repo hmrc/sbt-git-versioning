@@ -48,8 +48,10 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
       // using local git instead of JGit which returned incorrect `describe`
       // when there are many tags attached to the same commit
       val gitDescribeFromNonJGit =
-        ConsoleGitRunner("describe")(baseDirectory.value, ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
-      Some(version(gitDescribeFromNonJGit, majorVersion.value))
+        ConsoleGitRunner("describe", "--always")(
+          baseDirectory.value,
+          ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
+      Some(version(gitDescribeFromNonJGit, git.gitHeadCommit.value, majorVersion.value))
     },
     git.gitCurrentTags := {
       // overriding default lexicographic order of tags and sorting tags
@@ -58,7 +60,7 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
         .withGit(_.currentTags)
         .sortWith(versionComparator)
     },
-    git.gitTagToVersionNumber := (tag => Some(version(tag, majorVersion.value))),
+    git.gitTagToVersionNumber := (tag => Some(version(tag, git.gitHeadCommit.value, majorVersion.value))),
     git.uncommittedSignifier := None
   )
 
@@ -74,17 +76,17 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
     }
   }
 
-  def version(tagOrGitDescribe: String, majorVersion: Int): String =
+  def version(tagOrGitDescribe: String, gitHeadCommit: Option[String], majorVersion: Int): String =
     Properties.envOrNone(makeReleaseEnvName) match {
-      case Some(_) => nextVersion(tagOrGitDescribe, majorVersion)
-      case None    => nextVersion(tagOrGitDescribe, majorVersion) + "-SNAPSHOT"
+      case Some(_) => nextVersion(tagOrGitDescribe, gitHeadCommit, majorVersion)
+      case None    => nextVersion(tagOrGitDescribe, gitHeadCommit, majorVersion) + "-SNAPSHOT"
     }
 
   private object AsInt {
     def unapply(arg: String): Option[Int] = Some(arg.toInt)
   }
 
-  def nextVersion(gitDescribe: String, requestedMajorVersion: Int): String = {
+  def nextVersion(gitDescribe: String, gitHeadCommit: Option[String], requestedMajorVersion: Int): String = {
     val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
 
     def validMajorVersion(current: Int, requested: Int): Boolean =
@@ -112,6 +114,8 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
 
       case gitDescribeFormat(major, AsInt(minor), _) =>
         s"$major.${minor + 1}.0"
+
+      case unrecognizedGitDescribe if gitHeadCommit.exists(_.contains(unrecognizedGitDescribe)) => "0.1.0"
 
       case unrecognizedGitDescribe =>
         throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
