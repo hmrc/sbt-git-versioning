@@ -11,9 +11,10 @@ val logger     = ConsoleLogger()
 val pluginName = "sbt-git-versioning"
 
 lazy val project = Project(pluginName, file("."))
-  .enablePlugins(SbtAutoBuildPlugin, GitVersioning, SbtGitVersioning)
+  .enablePlugins(SbtAutoBuildPlugin, GitVersioning, SbtGitVersioning, SbtArtifactory)
   .settings(
     majorVersion  := 1,
+    makePublicallyAvailableOnBintray := true,
     sbtPlugin     := true,
     scalaVersion  := "2.10.5",
     targetJvm     := "jvm-1.7",

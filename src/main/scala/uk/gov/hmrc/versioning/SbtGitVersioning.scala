@@ -27,19 +27,19 @@ import sbt.{ConsoleLogger, _}
 
 import scala.util.Properties
 
-object SbtGitVersioning extends SbtGitVersioning
-
-trait SbtGitVersioning extends sbt.AutoPlugin {
-
-  lazy val majorVersion = settingKey[Int]("Sets the current major version")
-
-  val logger = ConsoleLogger()
+object SbtGitVersioning extends sbt.AutoPlugin with VersioningFromGitDescribe {
 
   override def requires = GitVersioning
 
   override def trigger   = allRequirements
-  val makeReleaseEnvName = "MAKE_RELEASE"
-  val makeHotfixEnvName  = "MAKE_HOTFIX"
+
+  object autoImport {
+
+    val majorVersion = settingKey[Int]("Sets the current major version")
+
+  }
+
+  import autoImport.majorVersion
 
   override def projectSettings = Seq(
     git.useGitDescribe := true,
@@ -48,9 +48,9 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
       // using local git instead of JGit which returned incorrect `describe`
       // when there are many tags attached to the same commit
       val gitDescribeFromNonJGit =
-        ConsoleGitRunner("describe", "--always")(
-          baseDirectory.value,
-          ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
+      ConsoleGitRunner("describe", "--always")(
+        baseDirectory.value,
+        ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
       Some(version(gitDescribeFromNonJGit, git.gitHeadCommit.value, majorVersion.value))
     },
     git.gitCurrentTags := {
@@ -63,6 +63,18 @@ trait SbtGitVersioning extends sbt.AutoPlugin {
     git.gitTagToVersionNumber := (tag => Some(version(tag, git.gitHeadCommit.value, majorVersion.value))),
     git.uncommittedSignifier := None
   )
+}
+
+trait VersioningFromGitDescribe {
+
+
+  val logger = ConsoleLogger()
+
+
+  val makeReleaseEnvName = "MAKE_RELEASE"
+  val makeHotfixEnvName  = "MAKE_HOTFIX"
+
+
 
   def versionComparator(tag1: String, tag2: String): Boolean = {
     val Version = """(?:release\/|v)(\d+)\.(\d+)\.(\d+)""".r

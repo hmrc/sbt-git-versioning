@@ -51,7 +51,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
     "create a new patch if MAKE_HOTFIX is true" in {
       val makeHotfixEnvVar = "TEST_MAKE_HOTFIX" // made available in build.sbt
-      val sbtGitVersioning = new SbtGitVersioning {
+      val sbtGitVersioning = new VersioningFromGitDescribe {
         override val makeHotfixEnvName: String = makeHotfixEnvVar
       }
       sbtGitVersioning.nextVersion("v0.1.0", None, 0) shouldBe "0.1.1"
@@ -59,7 +59,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
     "throw an exception if a new major is requested at the same time as a hotfix" in {
       val makeHotfixEnvVar = "TEST_MAKE_HOTFIX" // made available in build.sbt
-      val sbtGitVersioning = new SbtGitVersioning {
+      val sbtGitVersioning = new VersioningFromGitDescribe {
         override val makeHotfixEnvName: String = makeHotfixEnvVar
       }
       intercept[IllegalArgumentException] {
@@ -94,7 +94,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
     "return next version with -SNAPSHOT suffix if MAKE_RELEASE env variable not set" in {
       val makeReleaseEnvVar = "DUMMY_ENV_VAR"
-      val sbtGitVersioning = new SbtGitVersioning {
+      val sbtGitVersioning = new VersioningFromGitDescribe {
         override val makeReleaseEnvName: String = makeReleaseEnvVar
       }
 
@@ -103,7 +103,7 @@ class SbtVersioningSpec extends WordSpec with Matchers with TryValues with Optio
 
     "return next version if MAKE_RELEASE env var is set" in {
       val makeReleaseEnvVar = "TEST_MAKE_RELEASE" // made available in build.sbt
-      val sbtGitVersioning = new SbtGitVersioning {
+      val sbtGitVersioning = new VersioningFromGitDescribe {
         override val makeReleaseEnvName: String = makeReleaseEnvVar
       }
 
