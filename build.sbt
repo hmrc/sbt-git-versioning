@@ -5,7 +5,6 @@ import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning
-import uk.gov.hmrc.versioning.SbtGitVersioning.majorVersion
 
 val logger     = ConsoleLogger()
 val pluginName = "sbt-git-versioning"
