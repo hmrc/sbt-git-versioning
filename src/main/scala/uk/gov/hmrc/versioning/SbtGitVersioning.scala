@@ -16,68 +16,65 @@
 
 package uk.gov.hmrc.versioning
 
-import java.io.PrintWriter
-
 import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.SbtGit.git
-import com.typesafe.sbt.git.{ConsoleGitRunner, DefaultReadableGit}
-import org.eclipse.jgit.util.io.NullOutputStream
+import com.typesafe.sbt.git.{DefaultReadableGit, JGit}
 import sbt.Keys.baseDirectory
-import sbt.{ConsoleLogger, _}
-
+import sbt._
 import scala.util.Properties
 
-object SbtGitVersioning extends sbt.AutoPlugin with VersioningFromGitDescribe {
+object SbtGitVersioning extends sbt.AutoPlugin {
 
   override def requires = GitVersioning
 
-  override def trigger   = allRequirements
+  override def trigger = allRequirements
 
   object autoImport {
-
     val majorVersion = settingKey[Int]("Sets the current major version")
-
   }
 
+  import ReleaseVersioning._
   import autoImport.majorVersion
 
   override def projectSettings = Seq(
     git.useGitDescribe := true,
     git.versionProperty := "NONE",
-    git.gitDescribedVersion := {
-      // using local git instead of JGit which returned incorrect `describe`
-      // when there are many tags attached to the same commit
-      val gitDescribeFromNonJGit =
-      ConsoleGitRunner("describe", "--always")(
-        baseDirectory.value,
-        ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE)))
-      Some(version(gitDescribeFromNonJGit, git.gitHeadCommit.value, majorVersion.value))
+    git.gitDescribedVersion := Some(
+      version(
+        release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
+        hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+        latestTag    = getAllTags(baseDirectory.value).reverse.headOption,
+        majorVersion = majorVersion.value
+      )),
+    git.gitCurrentTags := getCurrentTags(baseDirectory.value),
+    git.gitTagToVersionNumber := { tag =>
+      Some(
+        version(
+          release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
+          hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+          latestTag    = Some(tag),
+          majorVersion = majorVersion.value
+        ))
     },
-    git.gitCurrentTags := {
-      // overriding default lexicographic order of tags and sorting tags
-      // according to our versioning
-      new DefaultReadableGit(baseDirectory.value)
-        .withGit(_.currentTags)
-        .sortWith(versionComparator)
-    },
-    git.gitTagToVersionNumber := (tag => Some(version(tag, git.gitHeadCommit.value, majorVersion.value))),
     git.uncommittedSignifier := None
   )
-}
 
-trait VersioningFromGitDescribe {
+  private def getCurrentTags(repo: File): Seq[String] =
+    // overriding default lexicographic order of tags and sorting tags
+    // according to our versioning
+    new DefaultReadableGit(repo)
+      .withGit(_.currentTags)
+      .sortWith(versionComparator)
 
-
-  val logger = ConsoleLogger()
-
-
-  val makeReleaseEnvName = "MAKE_RELEASE"
-  val makeHotfixEnvName  = "MAKE_HOTFIX"
-
-
+  private def getAllTags(repo: File): Seq[String] =
+    // overriding default lexicographic order of tags and sorting tags
+    // according to our versioning
+    JGit(repo).tags
+      .map(_.getName.replace("refs/tags/", ""))
+      .sortWith(versionComparator)
 
   def versionComparator(tag1: String, tag2: String): Boolean = {
-    val Version = """(?:release\/|v)(\d+)\.(\d+)\.(\d+)""".r
+    val Version = """(?:release\/|v)?(\d+)\.(\d+)\.(\d+)""".r
     (tag1, tag2) match {
       case (Version(AsInt(major1), _, _), Version(AsInt(major2), _, _)) if major1 != major2 => major1 < major2
       case (Version(_, AsInt(minor1), _), Version(_, AsInt(minor2), _)) if minor1 != minor2 => minor1 < minor2
@@ -88,50 +85,7 @@ trait VersioningFromGitDescribe {
     }
   }
 
-  def version(tagOrGitDescribe: String, gitHeadCommit: Option[String], majorVersion: Int): String =
-    Properties.envOrNone(makeReleaseEnvName) match {
-      case Some(_) => nextVersion(tagOrGitDescribe, gitHeadCommit, majorVersion)
-      case None    => nextVersion(tagOrGitDescribe, gitHeadCommit, majorVersion) + "-SNAPSHOT"
-    }
-
   private object AsInt {
     def unapply(arg: String): Option[Int] = Some(arg.toInt)
   }
-
-  def nextVersion(gitDescribe: String, gitHeadCommit: Option[String], requestedMajorVersion: Int): String = {
-    val gitDescribeFormat = """^(?:release\/|v)?(\d+)\.(\d+)\.(\d+)(?:-.*-g.*$){0,1}""".r
-
-    def validMajorVersion(current: Int, requested: Int): Boolean =
-      requested == current || requested == current + 1
-
-    val makeHotfix = Properties.envOrNone(makeHotfixEnvName).fold(false)(_.toBoolean)
-
-    gitDescribe match {
-      case gitDescribeFormat(AsInt(major), _, _) if major != requestedMajorVersion && makeHotfix =>
-        throw new IllegalArgumentException(
-          s"Invalid majorVersion: $requestedMajorVersion. $makeHotfixEnvName is also set to true. " +
-            "It is not possible to change the major version as part of a hotfix."
-        )
-      case gitDescribeFormat(AsInt(major), _, _) if !validMajorVersion(major, requestedMajorVersion) =>
-        throw new IllegalArgumentException(
-          s"Invalid majorVersion: $requestedMajorVersion. " +
-            s"The accepted values are $major or ${major + 1} based on current git tags."
-        )
-
-      case gitDescribeFormat(AsInt(major), _, _) if requestedMajorVersion != major =>
-        s"$requestedMajorVersion.0.0"
-
-      case gitDescribeFormat(major, minor, AsInt(patch)) if makeHotfix =>
-        s"$major.$minor.${patch + 1}"
-
-      case gitDescribeFormat(major, AsInt(minor), _) =>
-        s"$major.${minor + 1}.0"
-
-      case unrecognizedGitDescribe if gitHeadCommit.exists(_.contains(unrecognizedGitDescribe)) => "0.1.0"
-
-      case unrecognizedGitDescribe =>
-        throw new IllegalArgumentException(s"invalid version format for '$unrecognizedGitDescribe'")
-    }
-  }
-
 }
