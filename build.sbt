@@ -20,7 +20,7 @@ lazy val project = Project(pluginName, file("."))
       "bintray-sbt-plugin-releases",
       url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
     libraryDependencies ++= Seq(
-      "uk.gov.hmrc"   %% "release-versioning" % "0.7.0",
+      "uk.gov.hmrc"   %% "release-versioning" % "0.8.0",
       "org.scalatest" %% "scalatest"          % "2.2.4" % Test,
       "org.pegdown"   % "pegdown"             % "1.5.0" % Test
     ),

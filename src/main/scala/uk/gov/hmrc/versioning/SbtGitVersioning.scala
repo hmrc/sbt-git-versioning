@@ -16,16 +16,19 @@
 
 package uk.gov.hmrc.versioning
 
+import java.io.PrintWriter
+
 import com.typesafe.sbt.GitVersioning
-import com.typesafe.sbt.SbtGit.git
-import com.typesafe.sbt.git.{DefaultReadableGit, JGit}
-import sbt.Keys.baseDirectory
+import com.typesafe.sbt.git.ConsoleGitRunner
+import org.eclipse.jgit.util.io.NullOutputStream
+import sbt.Keys._
 import sbt._
-import scala.util.Properties
+
+import scala.util.{Properties, Try}
 
 object SbtGitVersioning extends sbt.AutoPlugin {
 
-  override def requires = GitVersioning
+  override def requires: Plugins = GitVersioning
 
   override def trigger = allRequirements
 
@@ -33,59 +36,22 @@ object SbtGitVersioning extends sbt.AutoPlugin {
     val majorVersion = settingKey[Int]("Sets the current major version")
   }
 
-  import ReleaseVersioning._
   import autoImport.majorVersion
 
   override def projectSettings = Seq(
-    git.useGitDescribe := true,
-    git.versionProperty := "NONE",
-    git.gitDescribedVersion := Some(
-      version(
-        release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
-        hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
-        latestTag    = getAllTags(baseDirectory.value).reverse.headOption,
-        majorVersion = majorVersion.value
-      )),
-    git.gitCurrentTags := getCurrentTags(baseDirectory.value),
-    git.gitTagToVersionNumber := { tag =>
-      Some(
-        version(
-          release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
-          hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
-          latestTag    = Some(tag),
-          majorVersion = majorVersion.value
-        ))
-    },
-    git.uncommittedSignifier := None
+    version := ReleaseVersioning.version(
+      release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
+      hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+      latestTag    = runGitDescribe(baseDirectory.value),
+      majorVersion = majorVersion.value
+    )
   )
 
-  private def getCurrentTags(repo: File): Seq[String] =
-    // overriding default lexicographic order of tags and sorting tags
-    // according to our versioning
-    new DefaultReadableGit(repo)
-      .withGit(_.currentTags)
-      .sortWith(versionComparator)
-
-  private def getAllTags(repo: File): Seq[String] =
-    // overriding default lexicographic order of tags and sorting tags
-    // according to our versioning
-    JGit(repo).tags
-      .map(_.getName.replace("refs/tags/", ""))
-      .sortWith(versionComparator)
-
-  def versionComparator(tag1: String, tag2: String): Boolean = {
-    val Version = """(?:release\/|v)?(\d+)\.(\d+)\.(\d+)""".r
-    (tag1, tag2) match {
-      case (Version(AsInt(major1), _, _), Version(AsInt(major2), _, _)) if major1 != major2 => major1 < major2
-      case (Version(_, AsInt(minor1), _), Version(_, AsInt(minor2), _)) if minor1 != minor2 => minor1 < minor2
-      case (Version(_, _, AsInt(patch1)), Version(_, _, AsInt(patch2))) if patch1 != patch2 => patch1 < patch2
-      case (Version(_, _, _), _)                                                            => false
-      case (_, Version(_, _, _))                                                            => true
-      case (_, _)                                                                           => true
-    }
-  }
-
-  private object AsInt {
-    def unapply(arg: String): Option[Int] = Some(arg.toInt)
-  }
+  private def runGitDescribe(baseDirectory: File): Option[String] =
+    Try {
+      ConsoleGitRunner("describe")(
+        baseDirectory,
+        ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE))
+      )
+    }.toOption
 }
