@@ -18,17 +18,15 @@ package uk.gov.hmrc.versioning
 
 import java.io.PrintWriter
 
-import com.typesafe.sbt.GitVersioning
 import com.typesafe.sbt.git.ConsoleGitRunner
 import org.eclipse.jgit.util.io.NullOutputStream
 import sbt.Keys._
 import sbt._
+import uk.gov.hmrc.versioning.ReleaseVersioning.calculateNextVersion
 
 import scala.util.{Properties, Try}
 
 object SbtGitVersioning extends sbt.AutoPlugin {
-
-  override def requires: Plugins = GitVersioning
 
   override def trigger = allRequirements
 
@@ -39,11 +37,11 @@ object SbtGitVersioning extends sbt.AutoPlugin {
   import autoImport.majorVersion
 
   override def projectSettings = Seq(
-    version := ReleaseVersioning.version(
-      release      = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
-      hotfix       = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
-      latestTag    = runGitDescribe(baseDirectory.value),
-      majorVersion = majorVersion.value
+    version := calculateNextVersion(
+      release          = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
+      hotfix           = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+      maybeGitDescribe = runGitDescribe(baseDirectory.value),
+      majorVersion     = majorVersion.value
     )
   )
 

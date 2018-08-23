@@ -1,4 +1,3 @@
-import com.typesafe.sbt.GitVersioning
 import sbt.Keys._
 import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
@@ -9,7 +8,7 @@ val logger     = ConsoleLogger()
 val pluginName = "sbt-git-versioning"
 
 lazy val project = Project(pluginName, file("."))
-  .enablePlugins(SbtAutoBuildPlugin, GitVersioning, SbtGitVersioning, SbtArtifactory)
+  .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtArtifactory)
   .settings(
     majorVersion := 1,
     makePublicallyAvailableOnBintray := true,
@@ -20,7 +19,7 @@ lazy val project = Project(pluginName, file("."))
       "bintray-sbt-plugin-releases",
       url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
     libraryDependencies ++= Seq(
-      "uk.gov.hmrc"   %% "release-versioning" % "0.8.0",
+      "uk.gov.hmrc"   %% "release-versioning" % "0.10.0",
       "org.scalatest" %% "scalatest"          % "2.2.4" % Test,
       "org.pegdown"   % "pegdown"             % "1.5.0" % Test
     ),
