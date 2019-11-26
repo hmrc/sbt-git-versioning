@@ -13,18 +13,15 @@ lazy val project = Project(pluginName, file("."))
     majorVersion := 1,
     makePublicallyAvailableOnBintray := true,
     sbtPlugin := true,
-    scalaVersion := "2.10.5",
+    scalaVersion := "2.11.8",
+    crossSbtVersions := Vector("0.13.18", "1.3.4"),
     targetJvm := "jvm-1.7",
     resolvers += Resolver.url(
       "bintray-sbt-plugin-releases",
       url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
     libraryDependencies ++= Seq(
-      "uk.gov.hmrc"   %% "release-versioning" % "0.11.0",
-      "org.scalatest" %% "scalatest"          % "2.2.4" % Test,
-      "org.pegdown"   % "pegdown"             % "1.5.0" % Test
-    ),
-    fork in Test := true,
-    envVars in Test := Map("TEST_MAKE_RELEASE" -> "true", "TEST_MAKE_HOTFIX" -> "true")
+      "uk.gov.hmrc"   %% "release-versioning" % "0.16.0"
+    )
   )
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
