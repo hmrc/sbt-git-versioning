@@ -12,7 +12,7 @@ lazy val project = Project(pluginName, file("."))
     majorVersion := 2,
     makePublicallyAvailableOnBintray := true,
     sbtPlugin := true,
-    scalaVersion := "2.10.7",
+    scalaVersion := "2.12.10",
     crossSbtVersions := Vector("0.13.18", "1.3.4"),
     resolvers += Resolver.url(
       "bintray-sbt-plugin-releases",
