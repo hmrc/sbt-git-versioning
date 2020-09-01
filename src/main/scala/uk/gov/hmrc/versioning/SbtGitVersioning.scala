@@ -47,7 +47,7 @@ object SbtGitVersioning extends sbt.AutoPlugin {
 
   private def runGitDescribe(baseDirectory: File): Option[String] =
     Try {
-      ConsoleGitRunner("describe", "--first-parent")(
+      ConsoleGitRunner("describe", "--tags", "--first-parent")(
         baseDirectory,
         ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE))
       )
