@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ object SbtGitVersioning extends sbt.AutoPlugin {
     version := calculateNextVersion(
       release          = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
       hotfix           = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+      releaseCandidate = Properties.envOrNone("MAKE_RELEASE_CANDIDATE").exists(_.toBoolean),
       maybeGitDescribe = runGitDescribe(baseDirectory.value),
       majorVersion     = majorVersion.value
     )
