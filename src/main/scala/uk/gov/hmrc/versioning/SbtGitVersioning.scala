@@ -40,6 +40,7 @@ object SbtGitVersioning extends sbt.AutoPlugin {
     version := calculateNextVersion(
       release          = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
       hotfix           = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
+      releaseCandidate = Properties.envOrNone("MAKE_RELEASE_CANDIDATE").exists(_.toBoolean),
       maybeGitDescribe = runGitDescribe(baseDirectory.value),
       majorVersion     = majorVersion.value
     )
