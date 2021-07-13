@@ -16,10 +16,7 @@
 
 package uk.gov.hmrc.versioning
 
-import java.io.PrintWriter
-
 import com.typesafe.sbt.git.ConsoleGitRunner
-import org.eclipse.jgit.util.io.NullOutputStream
 import sbt.Keys._
 import sbt._
 import uk.gov.hmrc.versioning.ReleaseVersioning.calculateNextVersion
@@ -41,16 +38,25 @@ object SbtGitVersioning extends sbt.AutoPlugin {
       release          = Properties.envOrNone("MAKE_RELEASE").exists(_.toBoolean),
       hotfix           = Properties.envOrNone("MAKE_HOTFIX").exists(_.toBoolean),
       releaseCandidate = Properties.envOrNone("MAKE_RELEASE_CANDIDATE").exists(_.toBoolean),
-      maybeGitDescribe = runGitDescribe(baseDirectory.value),
+      maybeGitDescribe = runGitDescribe(baseDirectory.value, errorLogger(sLog.value)),
       majorVersion     = majorVersion.value
     )
   )
 
-  private def runGitDescribe(baseDirectory: File): Option[String] =
+  private def runGitDescribe(baseDirectory: File, logger: Logger): Option[String] =
     Try {
-      ConsoleGitRunner("describe", "--first-parent")(
-        baseDirectory,
-        ConsoleLogger(new PrintWriter(NullOutputStream.INSTANCE))
-      )
+      ConsoleGitRunner("describe", "--first-parent")(baseDirectory, logger)
     }.toOption
+
+  private def errorLogger(logger: Logger): Logger =
+    new Logger {
+      def log(level: Level.Value, message: => String): Unit = {
+        if (level >= Level.Warn)
+          logger.log(level, message)
+      }
+
+      def success(message: => String): Unit = ()
+
+      def trace(t: => Throwable): Unit = ()
+    }
 }
