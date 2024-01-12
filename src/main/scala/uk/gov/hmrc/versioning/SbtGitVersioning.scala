@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.versioning
 
-import com.typesafe.sbt.git.ConsoleGitRunner
+import com.github.sbt.git.ConsoleGitRunner
+import uk.gov.hmrc.versioning.ReleaseVersioning.calculateNextVersion
 import sbt.Keys._
 import sbt._
-import uk.gov.hmrc.versioning.ReleaseVersioning.calculateNextVersion
 
 import scala.util.{Properties, Try}
 
@@ -50,13 +50,14 @@ object SbtGitVersioning extends sbt.AutoPlugin {
 
   private def errorLogger(logger: Logger): Logger =
     new Logger {
-      def log(level: Level.Value, message: => String): Unit = {
+      def log(level: Level.Value, message: => String): Unit =
         if (level >= Level.Warn)
           logger.log(level, message)
-      }
 
-      def success(message: => String): Unit = ()
+      def success(message: => String): Unit =
+        ()
 
-      def trace(t: => Throwable): Unit = ()
+      def trace(t: => Throwable): Unit =
+        ()
     }
 }
