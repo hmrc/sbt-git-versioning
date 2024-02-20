@@ -6,7 +6,7 @@ lazy val project = Project("sbt-git-versioning", file("."))
     scalaVersion     := "2.12.18",
     resolvers += Resolver.url("HMRC-open-artefacts-ivy2", url("https://open.artefacts.tax.service.gov.uk/ivy2"))(Resolver.ivyStylePatterns),
     libraryDependencies ++= Seq(
-      "uk.gov.hmrc" %% "release-versioning" % "0.18.0"
+      "uk.gov.hmrc" %% "release-versioning" % "0.19.0"
     )
   )
 
