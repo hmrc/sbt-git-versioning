@@ -40,4 +40,4 @@ nohup.out
 .vscode/
 .bloop/
 metals.sbt
-
+.bsp/sbt.json
